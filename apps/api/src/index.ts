@@ -8,6 +8,9 @@ import util from "util";
 const setTimeoutPromise = util.promisify(setTimeout);
 import amqp from "amqplib";
 
+/*
+@Setting up RabbitMQ
+*/
 async function setupRabbitMQ() {
   try {
     const connection = await amqp.connect("amqp://localhost:5672");
@@ -99,9 +102,15 @@ app.get("/problem", async (req, res) => {
 
 async function solveTestCases(code: string) {
   let testPass = true;
+  /*
+  @Starts the container
+  */
   docker.getContainer(id).start(async (err, data) => {
     if (err) throw err;
     try {
+      /*
+      @Adds code to the Volume of the container
+      */
       const exec = await docker.getContainer(id).exec({
         Cmd: ["sh", "-c", `echo "${code}" > /data/foo`],
         AttachStdout: true,
@@ -110,6 +119,9 @@ async function solveTestCases(code: string) {
       const startExec = await exec.start({}, async () => {
         console.log("First command done");
         setTimeout(async () => {
+          /*
+          @Reads code in the Volume of container
+          */
           const exec2 = await docker.getContainer(id).exec({
             Cmd: ["sh", "-c", `cat /data/foo`],
             AttachStdout: true,
@@ -123,11 +135,17 @@ async function solveTestCases(code: string) {
             });
             stream?.on("end", async () => {
               let newCode = code.replace(/g\//g, "");
+              /*
+              @Maps through testcases in a promise to avoid async bugs
+              */
               const testcasePromises = problems[0].testcases.map(
                 async (testcase) => {
                   console.log("testcase ", testcase);
                   const updatedCode =
                     code + "\n" + `console.log(${testcase.functionCall})`;
+                  /*
+                    @Executes code in container that came from volume
+                    */
                   const exec3 = await docker.getContainer(id).exec({
                     Cmd: ["node", "-e", `${updatedCode}`],
                     AttachStdout: true,
@@ -138,7 +156,9 @@ async function solveTestCases(code: string) {
                     async (err, stream) => {
                       console.log("third command done");
                       stream?.on("data", async (chunk) => {
-                        console.log("DATA");
+                        /*
+                        @Replaces testcase and execution result's characters to only be left with numbers/letters
+                        */
                         const output = chunk.toString("utf8");
                         const executionResult = output
                           .replace(/\x1B\[[0-9;]*[mG]/g, "")
@@ -152,7 +172,9 @@ async function solveTestCases(code: string) {
                           .replace(/[\r\n]/g, "")
                           .replace(/[^\w]/g, "");
                         console.log("test result", testresult);
-
+                        /*
+                        @Compares both
+                        */
                         if (testresult != executionResult) {
                           testPass = false;
                         }
@@ -175,6 +197,9 @@ async function solveTestCases(code: string) {
 
 app.post("/", async (req, res) => {
   const { code } = req.body;
+  /*
+  @Sets up RabbitMQ to add code to queue
+  */
   const rabbitMQ = await setupRabbitMQ();
   const { channel } = rabbitMQ;
   const queue = "codeQueue";
