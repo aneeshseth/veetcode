@@ -6,6 +6,32 @@ const id = "2b552705876b";
 import cors from "cors";
 import util from "util";
 const setTimeoutPromise = util.promisify(setTimeout);
+import amqp from "amqplib";
+
+async function setupRabbitMQ() {
+  try {
+    const connection = await amqp.connect("amqp://localhost:5672");
+    const channel = await connection.createChannel();
+    const queue = "codeQueue";
+
+    await channel.assertQueue(queue, { durable: false });
+
+    return { connection, channel, queue };
+  } catch (err) {
+    throw err;
+  }
+}
+
+async function start() {
+  try {
+    const rabbitMQ = await setupRabbitMQ();
+    const { channel } = rabbitMQ;
+  } catch (err) {
+    console.error("Error setting up RabbitMQ:", err);
+  }
+}
+
+start();
 
 app.use(cors());
 const problems = [
@@ -71,31 +97,7 @@ app.get("/problem", async (req, res) => {
   }
 });
 
-app.post("/", async (req, res) => {
-  //const { code } = req.body;
-  let code = `
-  function twoSum(nums, target) {
-    // Create a map to store the indices of elements we have seen so far
-    const numMap = new Map();
-
-    // Iterate through the array
-    for (let i = 0; i < nums.length; i++) {
-        // Calculate the complement (the value we need to reach the target)
-        const complement = target - nums[i];
-
-        // Check if the complement exists in the map
-        if (numMap.has(complement)) {
-            // Return the indices of the two numbers
-            return [numMap.get(complement), i];
-        }
-
-        // If the complement doesn't exist, store the current number and its index in the map
-        numMap.set(nums[i], i);
-    }
-
-    // If no solution is found
-    return null;
-}`;
+async function solveTestCases(code: string) {
   let testPass = true;
   docker.getContainer(id).start(async (err, data) => {
     if (err) throw err;
@@ -162,12 +164,27 @@ app.post("/", async (req, res) => {
               await Promise.all(testcasePromises);
             });
           });
-          res.status(200).json({ msg: testPass });
+          return testPass;
         }, 1000);
       });
     } catch (err) {
       console.log(err);
     }
+  });
+}
+
+app.post("/", async (req, res) => {
+  const { code } = req.body;
+  const rabbitMQ = await setupRabbitMQ();
+  const { channel } = rabbitMQ;
+  const queue = "codeQueue";
+  channel.sendToQueue(queue, Buffer.from(code));
+
+  channel.consume(queue, async (msg) => {
+    const code = msg?.content.toString();
+    const status = await solveTestCases(code!);
+    channel.ack(msg!);
+    res.status(200).json({ msg: status });
   });
 });
 

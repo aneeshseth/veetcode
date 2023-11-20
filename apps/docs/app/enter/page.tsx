@@ -42,7 +42,21 @@ function page() {
     setCode(newValue);
   };
 
-  async function checkCode() {}
+  interface data {
+    msg: boolean;
+  }
+
+  async function checkCode() {
+    const res = await axios.post(`${API_BACKEND_URL}/`, {
+      code: code,
+    });
+    const data: data = await res.data;
+    if (data) {
+      alert("code correct!");
+    } else {
+      alert("retry!");
+    }
+  }
 
   useEffect(() => {
     fetchData();
