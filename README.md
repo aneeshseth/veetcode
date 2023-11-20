@@ -1,9 +1,9 @@
-# Veetcode - Leetcode like Excecution Environment for JS (Dockerized)
+# Veetcode - Leetcode like Excecution Environment for JS 
 
 
 # Overview
 
-This project (written in 100% Typescript) provides a LeetCode-type code execution environment where code can be submitted to a backend route, added to a Docker volume, and executed within a Docker container, all orchestrated through a Docker Compose file. The system allows users to submit code, which is then placed in a Docker volume accessible by a container. The container processes the code, and checks through predefined testcases.
+This project (written in 100% Typescript, Dockerized) provides a LeetCode-type code execution environment where code can be submitted to a backend route, added to a Docker volume, and executed within a Docker container, all orchestrated through a Docker Compose file. The system allows users to submit code, which is then placed in a Docker volume accessible by a container. The container processes the code, and checks through predefined testcases.
 
 # How it Works
 
