@@ -1,0 +1,39 @@
+.container2 {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+.left-box,
+.right-box {
+  flex: 1;
+  height: 100%;
+  width: 100vw;
+}
+
+.left-box {
+  border-right: solid;
+  background-color: black;
+  border-color: white;
+}
+
+.right-box {
+  background-color: black;
+}
+
+@media (max-width: 1070px) {
+  .left-box {
+    display: none;
+  }
+
+  .container2 {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .right-box {
+    width: 100vw;
+    height: 100vh;
+  }
+}
