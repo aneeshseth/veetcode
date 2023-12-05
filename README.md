@@ -14,12 +14,12 @@ This project (written in 100% Typescript, Dockerized) provides a LeetCode-type c
 
 # Tech Stack
 
+- Docker
 - Typescript
 - Turborepo
 - NextJS 13
 - ExpressJS
 - RabbitMQ
-- Docker
 - ShadCN/ui
 
 
